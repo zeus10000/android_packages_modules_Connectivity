@@ -199,7 +199,13 @@ public class NetworkStatsFactory {
 
     @VisibleForTesting
     public NetworkStatsFactory(@NonNull Context ctx, Dependencies deps) {
-        mBpfNetMaps = deps.createBpfNetMaps(ctx);
+        BpfNetMaps tmpBpf = null;
+        try {
+            tmpBpf = deps.createBpfNetMaps(ctx);
+        } catch (Exception e) {
+            Log.w(TAG, "BpfNetMaps unavailable, network stats may be incomplete", e);
+        }
+        mBpfNetMaps = tmpBpf;
         synchronized (mPersistentDataLock) {
             mPersistSnapshot = new NetworkStats(SystemClock.elapsedRealtime(), -1);
             mTunAnd464xlatAdjustedStats = new NetworkStats(SystemClock.elapsedRealtime(), -1);
