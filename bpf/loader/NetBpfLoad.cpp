@@ -1341,8 +1341,7 @@ static int loadCodeSections(const char* elfPath, vector<codeSection>& cs, const 
             ALOGI("prog %s id %d len jit:%d xlat:%d", progPinLoc.c_str(), progId, jitLen, xlatLen);
 
             if (!jitLen && bpfloader_ver >= BPFLOADER_MAINLINE_25Q2_VERSION) {
-                ALOGE("Kernel eBPF JIT failure for %s", progPinLoc.c_str());
-                return -ENOTSUP;
+                ALOGW("Kernel eBPF JIT not available for %s, continuing", progPinLoc.c_str());
             }
         }
     }
