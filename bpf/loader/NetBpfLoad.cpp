@@ -640,7 +640,7 @@ static bool mapMatchesExpectations(const unique_fd& fd, const string& mapName,
         (fd_key_size == (int)mapDef.key_size) &&
         (fd_value_size == (int)mapDef.value_size) &&
         (fd_max_entries == (int)desired_max_entries) &&
-        (fd_map_flags == desired_map_flags)) {
+        ((fd_map_flags & ~0x180) == (desired_map_flags & ~0x180))) {
         return true;
     }
 
