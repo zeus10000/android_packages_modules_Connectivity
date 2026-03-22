@@ -294,7 +294,8 @@ public class BpfNetMaps {
             return SingleWriterBpfMap.getSingleton(LOCAL_NET_ACCESS_MAP_PATH,
                     LocalNetAccessKey.class, Bool.class);
         } catch (ErrnoException e) {
-            throw new IllegalStateException("Cannot open local_net_access map", e);
+            Log.w(TAG, "Cannot open local_net_access map, local network access control unavailable", e);
+            return null;
         }
     }
 
@@ -320,7 +321,7 @@ public class BpfNetMaps {
             sUidOwnerMap = getUidOwnerMap();
         }
         try {
-            sUidOwnerMap.clear();
+            if (sUidOwnerMap != null) sUidOwnerMap.clear();
         } catch (ErrnoException e) {
             throw new IllegalStateException("Failed to initialize uid owner map", e);
         }
@@ -346,7 +347,7 @@ public class BpfNetMaps {
             sIngressDiscardMap = getIngressDiscardMap();
         }
         try {
-            sIngressDiscardMap.clear();
+            if (sIngressDiscardMap != null) sIngressDiscardMap.clear();
         } catch (ErrnoException e) {
             throw new IllegalStateException("Failed to initialize ingress discard map", e);
         }
@@ -356,16 +357,16 @@ public class BpfNetMaps {
                 sLocalNetAccessMap = getLocalNetAccessMap();
             }
             try {
-                sLocalNetAccessMap.clear();
+                if (sLocalNetAccessMap != null) sLocalNetAccessMap.clear();
             } catch (ErrnoException e) {
-                throw new IllegalStateException("Failed to initialize local_net_access map", e);
+                Log.w(TAG, "Failed to initialize local_net_access map", e);
             }
 
             if (sLocalNetBlockedUidMap == null) {
                 sLocalNetBlockedUidMap = getLocalNetBlockedUidMap();
             }
             try {
-                sLocalNetBlockedUidMap.clear();
+                if (sLocalNetBlockedUidMap != null) sLocalNetBlockedUidMap.clear();
             } catch (ErrnoException e) {
                 throw new IllegalStateException("Failed to initialize local_net_blocked_uid map",
                         e);
@@ -380,7 +381,11 @@ public class BpfNetMaps {
     @RequiresApi(Build.VERSION_CODES.TIRAMISU)
     private static synchronized void ensureInitialized(final Context context) {
         if (sInitialized) return;
-        initBpfMaps();
+        try {
+            initBpfMaps();
+        } catch (Exception e) {
+            Log.w(TAG, "BPF maps init failed, some networking features may be unavailable", e);
+        }
         sInitialized = true;
     }
 
@@ -915,6 +920,10 @@ public class BpfNetMaps {
             final InetAddress address, final int protocol, final int remotePort,
             final boolean isAllowed) {
         throwIfPre25Q2("addLocalNetAccess is not available on pre-B devices");
+        if (sLocalNetAccessMap == null) {
+            Log.w(TAG, "BPF maps not available, skipping addLocalNetAccess");
+            return;
+        }
         if (iface == null) {
             Log.e(TAG, "Null iface, skip addLocalNetAccess for " + address);
             return;
@@ -933,7 +942,7 @@ public class BpfNetMaps {
                 address, protocol, remotePort);
 
         try {
-            sLocalNetAccessMap.updateEntry(localNetAccessKey, new Bool(isAllowed));
+            if (sLocalNetAccessMap != null) sLocalNetAccessMap.updateEntry(localNetAccessKey, new Bool(isAllowed));
         } catch (ErrnoException e) {
             Log.e(TAG, "Failed to add local network access for localNetAccessKey : "
                     + localNetAccessKey + ", isAllowed : " + isAllowed);
@@ -967,7 +976,7 @@ public class BpfNetMaps {
                 address, protocol, remotePort);
 
         try {
-            sLocalNetAccessMap.deleteEntry(localNetAccessKey);
+            if (sLocalNetAccessMap != null) sLocalNetAccessMap.deleteEntry(localNetAccessKey);
         } catch (ErrnoException e) {
             Log.e(TAG, "Failed to remove local network access for localNetAccessKey : "
                     + localNetAccessKey);
@@ -1002,7 +1011,7 @@ public class BpfNetMaps {
         final LocalNetAccessKey localNetAccessKey = new LocalNetAccessKey(lpmBitlen, ifIndex,
                 address, protocol, remotePort);
         try {
-            final Bool value = sLocalNetAccessMap.getValue(localNetAccessKey);
+            final Bool value = sLocalNetAccessMap != null ? sLocalNetAccessMap.getValue(localNetAccessKey) : null;
             return value == null ? true : value.val;
         } catch (ErrnoException e) {
             Log.e(TAG, "Failed to find local network access configuration for "
