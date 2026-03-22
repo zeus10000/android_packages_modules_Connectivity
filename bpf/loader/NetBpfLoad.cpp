@@ -1559,7 +1559,10 @@ static int logTetheringApexVersion(void) {
     fclose(f);
     f = NULL;
 
-    if (!found_blockdev) return 2;
+    if (!found_blockdev) {
+        ALOGW("Tethering APEX not mounted from blockdev, continuing");
+        return 0;
+    }
     ALOGV("Found Tethering Apex mounted from blockdev %s", found_blockdev);
 
     f = fopen("/proc/mounts", "re");
@@ -1900,8 +1903,7 @@ static int doLoad(char** argv, char * const envp[]) {
             ALOGE("If this triggers randomly, you might be hitting some memory allocation "
                   "problems or startup script race.");
             ALOGE("--- DO NOT EXPECT SYSTEM TO BOOT SUCCESSFULLY ---");
-            sleep(20);
-            return 2;
+            ALOGW("Continuing after BPF load failure, some programs may be unavailable");
         }
     }
 
