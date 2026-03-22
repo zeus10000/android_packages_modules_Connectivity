@@ -41,7 +41,7 @@ extern "C" jint JNI_OnLoad(JavaVM* vm, void*) {
 
     if (android::modules::sdklevel::IsAtLeastT()) {
         if (register_com_android_server_connectivity_ClatCoordinator(env) < 0) {
-            return JNI_ERR;
+            ALOGW("ClatCoordinator JNI registration failed, clat (464xlat) unavailable");
         }
 
         if (register_android_server_net_NetworkStatsFactory(env) < 0) {
