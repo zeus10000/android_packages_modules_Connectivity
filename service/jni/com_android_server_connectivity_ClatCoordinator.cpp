@@ -132,7 +132,9 @@ static void verifyClatPerms() {
 
 #undef V2
 
-    if (fatal) abort();
+    if (fatal) {
+        ALOGW("ClatCoordinator: BPF capability check failed, clat may be unavailable");
+    }
 }
 
 #undef V
